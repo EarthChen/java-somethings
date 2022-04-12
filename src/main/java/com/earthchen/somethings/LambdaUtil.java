@@ -22,6 +22,9 @@ public final class LambdaUtil {
      */
     private static final Map<String, WeakReference<SerializedLambda>> FUNC_CACHE = new ConcurrentHashMap<>();
 
+
+    private static final Map<String, String> FUNC_FIELD_NAME_CACHE = new ConcurrentHashMap<>();
+
     /**
      * 解析 lambda 表达式, 该方法只是调用了，在此基础上加了缓存。
      * 该缓存可能会在任意不定的时间被清除
@@ -62,7 +65,15 @@ public final class LambdaUtil {
 
 
     public static <T> String getFieldName(SFunction<T, ?> func) {
-        return methodToProperty(resolve(func).getImplMethodName());
+        Class<?> clazz = func.getClass();
+        String canonicalName = clazz.getCanonicalName();
+        String fieldName = FUNC_FIELD_NAME_CACHE.get(canonicalName);
+        if (fieldName == null) {
+            fieldName = methodToProperty(resolve(func).getImplMethodName());
+            FUNC_FIELD_NAME_CACHE.put(canonicalName, fieldName);
+        }
+        return fieldName;
+
     }
 
     private static Map<String, String> createColumnCacheMap(Class<?> clazz) {
